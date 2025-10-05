@@ -3,6 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { TrendingUp, Activity, Target, Shield, AlertTriangle } from 'lucide-react'
 import { useTopCryptos, useFearGreedIndex } from '@/hooks/useMarketData'
+import { RealTimePricesPanel } from '@/components/RealTimePricesPanel'
+import { TradingSignalsPanel } from '@/components/TradingSignalsPanel'
+import { RiskManagementWidget } from '@/components/RiskManagementWidget'
 import { formatCurrency, formatPercentage, getPriceChangeColor } from '@/lib/utils'
 
 export const Dashboard: React.FC = () => {
@@ -89,111 +92,48 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Top Cryptocurrencies */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Top Cryptocurrencies</CardTitle>
-            <CardDescription>
-              Real-time prices and 24h changes
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {cryptosLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 animate-pulse">
-                    <div className="h-4 bg-muted rounded w-20"></div>
-                    <div className="h-4 bg-muted rounded w-16"></div>
-                    <div className="h-4 bg-muted rounded w-12"></div>
-                  </div>
-                ))}
-              </div>
-            ) : cryptosError ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="text-center">
-                  <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Unable to load market data. Check backend connection.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {topCryptos?.slice(0, 10).map((crypto) => (
-                  <div
-                    key={crypto.symbol}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-xs font-medium">
-                          {crypto.symbol.replace('USDT', '').slice(0, 2)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{crypto.symbol}</p>
-                        <p className="text-xs text-muted-foreground">#{crypto.rank}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(crypto.price)}</p>
-                      <p className={`text-xs ${getPriceChangeColor(crypto.changePercent24h)}`}>
-                        {formatPercentage(crypto.changePercent24h)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - Real-Time Prices */}
+        <div className="lg:col-span-1">
+          <RealTimePricesPanel />
+        </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common trading operations
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button className="w-full justify-start" variant="outline">
-              <Target className="mr-2 h-4 w-4" />
-              Generate New Signal
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <Activity className="mr-2 h-4 w-4" />
-              Scan All Markets
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <Shield className="mr-2 h-4 w-4" />
-              Calculate Position Size
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <TrendingUp className="mr-2 h-4 w-4" />
-              View Analysis
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Center Column - Trading Signals */}
+        <div className="lg:col-span-1">
+          <TradingSignalsPanel />
+        </div>
+
+        {/* Right Column - Risk Management */}
+        <div className="lg:col-span-1">
+          <RiskManagementWidget />
+        </div>
       </div>
 
-      {/* Recent Signals */}
+      {/* Quick Actions Footer */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Trading Signals</CardTitle>
+          <CardTitle>System Status & Quick Actions</CardTitle>
           <CardDescription>
-            Latest AI-generated trading opportunities
+            Monitor system health and perform quick operations
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              No signals generated yet. Start by scanning the markets or generating a signal for a specific symbol.
-            </p>
-            <Button className="mt-4">
-              Generate First Signal
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button variant="outline" className="h-16 flex-col">
+              <Activity className="h-6 w-6 mb-2" />
+              <span className="text-xs">Market Scan</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col">
+              <Target className="h-6 w-6 mb-2" />
+              <span className="text-xs">Generate Signal</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col">
+              <Shield className="h-6 w-6 mb-2" />
+              <span className="text-xs">Risk Analysis</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col">
+              <TrendingUp className="h-6 w-6 mb-2" />
+              <span className="text-xs">Portfolio</span>
             </Button>
           </div>
         </CardContent>

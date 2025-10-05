@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   ANALYSIS_MULTI_TIMEFRAME: '/api/analysis/multi-timeframe',
 
   // Signal Generation
+  SIGNALS: '/api/signals',
   SIGNALS_GENERATE: '/api/signals/generate',
   SIGNALS_SCAN: '/api/signals/scan-multiple',
   SIGNALS_CONFLUENCE: '/api/signals/confluence',

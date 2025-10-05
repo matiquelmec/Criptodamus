@@ -34,6 +34,8 @@ export const QUERY_KEYS = {
 
   // Signals
   SIGNALS: ['signals'],
+  SIGNALS_ACTIVE: ['signals', 'active'],
+  SIGNALS_HISTORY: ['signals', 'history'],
   SIGNAL: (symbol: string) => ['signals', symbol],
   SIGNALS_CONFIG: ['signals', 'config'],
 
