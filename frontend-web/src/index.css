@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bullish: 34 197 94;  /* green-500 */
+    --color-bearish: 239 68 68;  /* red-500 */
+    --color-warning: 245 158 11; /* amber-500 */
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-gray-200 dark:border-gray-800;
+  }
+
+  body {
+    @apply bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-50;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Trading-specific utility classes */
+.text-bullish {
+  color: rgb(var(--color-bullish));
+}
+
+.text-bearish {
+  color: rgb(var(--color-bearish));
+}
+
+.text-warning {
+  color: rgb(var(--color-warning));
+}
+
+.bg-bullish {
+  background-color: rgb(var(--color-bullish));
+}
+
+.bg-bearish {
+  background-color: rgb(var(--color-bearish));
+}
+
+.bg-warning {
+  background-color: rgb(var(--color-warning));
+}
