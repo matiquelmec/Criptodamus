@@ -18,17 +18,23 @@ import { formatCurrency, formatPercentage, getPriceChangeColor } from '@/lib/uti
 import { cn } from '@/lib/utils'
 
 const TOP_SYMBOLS = [
-  'BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'SOLUSDT', 'DOTUSDT',
-  'LINKUSDT', 'LTCUSDT', 'XRPUSDT', 'BNBUSDT', 'AVAXUSDT',
-  'MATICUSDT', 'ATOMUSDT', 'ALGOUSDT', 'VETUSDT', 'FILUSDT',
-  'TRXUSDT', 'EOSUSDT', 'XLMUSDT', 'AAVEUSDT', 'UNIUSDT'
+  'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
+  'ADAUSDT', 'AVAXUSDT', 'TRXUSDT', 'LINKUSDT', 'DOTUSDT',
+  'MATICUSDT', 'LTCUSDT', 'ATOMUSDT', 'UNIUSDT', 'XLMUSDT',
+  'AAVEUSDT', 'ALGOUSDT', 'VETUSDT', 'FILUSDT', 'EOSUSDT',
+  'CHZUSDT', 'MANAUSDT', 'SANDUSDT', 'AXSUSDT', 'THETAUSDT',
+  'FTMUSDT', 'ICPUSDT', 'HBARUSDT', 'NEOUSDT', 'ZILUSDT',
+  'RNDRUSDT', 'STXUSDT', 'FLOWUSDT', 'QNTUSDT', 'XTZUSDT',
+  'APTUSDT', 'NEARUSDT', 'OPUSDT', 'ARBUSDT', 'SUIUSDT',
+  'DYDXUSDT', 'INJUSDT', 'TIAUSDT', 'WLDUSDT', 'MKRUSDT',
+  'LDOUSDT', 'STRKUSDT', 'TONUSDT', 'NOTUSDT', 'DOGEUSDT'
 ]
 
 export const RealTimePricesPanel: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSymbols] = useState<string[]>(TOP_SYMBOLS)
 
-  const { data: topCryptos, isLoading: topCryptosLoading } = useTopCryptos(20)
+  const { data: topCryptos, isLoading: topCryptosLoading } = useTopCryptos(50)
   const {
     prices,
     lastUpdate,
@@ -39,15 +45,17 @@ export const RealTimePricesPanel: React.FC = () => {
 
   // Combine API data with WebSocket data
   const combinedData = useMemo(() => {
-    if (!topCryptos) return []
+    if (!topCryptos || !Array.isArray(topCryptos)) return []
 
     return topCryptos.map(crypto => {
-      const realtimePrice = prices[crypto.symbol]
+      // Convert symbol format: "BTC/USDT" -> "BTCUSDT" for WebSocket lookup
+      const wsSymbol = crypto.symbol?.replace('/', '') || ''
+      const realtimePrice = prices[wsSymbol]
       return {
         ...crypto,
         // Use real-time price if available, otherwise fallback to API data
         price: realtimePrice?.price ?? crypto.price,
-        changePercent24h: realtimePrice?.changePercent24h ?? crypto.changePercent24h,
+        changePercent24h: realtimePrice?.changePercent24h ?? crypto.change24h,
         volume24h: realtimePrice?.volume24h ?? crypto.volume24h,
         isRealTime: !!realtimePrice,
         lastUpdate: realtimePrice?.timestamp,
@@ -60,12 +68,12 @@ export const RealTimePricesPanel: React.FC = () => {
     if (!searchTerm) return combinedData
     return combinedData.filter(crypto =>
       crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      crypto.symbol.replace('USDT', '').toLowerCase().includes(searchTerm.toLowerCase())
+      crypto.symbol.replace('/USDT', '').replace('USDT', '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (crypto as any).name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [combinedData, searchTerm])
 
   const connectionStatus = isConnected ? 'Connected' : 'Disconnected'
-  const connectionColor = isConnected ? 'text-green-500' : 'text-red-500'
 
   return (
     <Card className="h-full">
@@ -83,7 +91,7 @@ export const RealTimePricesPanel: React.FC = () => {
               </Badge>
             </CardTitle>
             <CardDescription>
-              Top 20 cryptocurrencies with live WebSocket updates
+              Top 50 cryptocurrencies with live WebSocket updates
               {lastUpdate && (
                 <span className="block text-xs text-muted-foreground mt-1">
                   Last update: {new Date(lastUpdate).toLocaleTimeString()}
@@ -159,7 +167,7 @@ export const RealTimePricesPanel: React.FC = () => {
                   <div className="relative">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                       <span className="text-sm font-bold text-primary">
-                        {crypto.symbol.replace('USDT', '').slice(0, 3)}
+                        {crypto.symbol.replace('/USDT', '').replace('USDT', '').slice(0, 3)}
                       </span>
                     </div>
                     {crypto.isRealTime && (
@@ -170,7 +178,7 @@ export const RealTimePricesPanel: React.FC = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold">{crypto.symbol.replace('USDT', '')}</p>
+                      <p className="font-semibold">{crypto.symbol.replace('/USDT', '').replace('USDT', '')}</p>
                       {crypto.changePercent24h > 0 ? (
                         <TrendingUp className="w-3 h-3 text-green-500" />
                       ) : (

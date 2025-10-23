@@ -21,7 +21,9 @@
 CMC_API_KEY=tu_key_aqui
 ```
 
-#### 2. 📱 **Telegram Bot** (GRATIS)
+#### 2. 📱 **Telegram Bot** (GRATIS) - ¡AHORA CON MÚLTIPLES BOTS!
+
+**Opción A: Configuración Simple (1 Bot)**
 ```bash
 # 1. Habla con @BotFather en Telegram
 # 2. Usa /newbot y sigue instrucciones
@@ -31,6 +33,24 @@ CMC_API_KEY=tu_key_aqui
 TELEGRAM_BOT_TOKEN=1234567890:AABBCCddee_token_completo_aqui
 TELEGRAM_CHAT_ID=123456789
 ```
+
+**Opción B: Múltiples Bots (RECOMENDADO)**
+```bash
+# 🤖 SISTEMA MULTI-BOT para mejor organización:
+
+# Bot Principal - Señales de trading críticas
+TELEGRAM_BOT_TOKEN_PRIMARY=token_bot_principal_aqui
+TELEGRAM_CHAT_ID_PRIMARY=chat_principal_aqui
+
+# Bot Secundario - Análisis y reportes
+TELEGRAM_BOT_TOKEN_SECONDARY=token_bot_secundario_aqui
+TELEGRAM_CHAT_ID_SECONDARY=chat_secundario_aqui
+
+# Configuración automática con script:
+node setup-multi-telegram.js
+```
+
+**📚 Documentación completa:** [MULTI_TELEGRAM_GUIDE.md](./MULTI_TELEGRAM_GUIDE.md)
 
 ### Paso 2: APIs OPCIONALES (Para trading real)
 

@@ -20,7 +20,22 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(wmic process where processid=27176 delete:*)",
+      "Bash(cmd /c:*)",
+      "Bash(npx kill-port:*)",
+      "Read(//c/Users/Matías Riquelme/Desktop/Todo Septiembre 2025/asesor de inversion en activos digitales/**)",
+      "Bash(nc localhost 3001)",
+      "Bash(wmic process where processid=18272 delete:*)",
+      "Bash(wmic process where processid=27836 delete:*)",
+      "Bash(npm start)",
+      "Bash(wmic process where processid=18180 delete:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(python:*)",
+      "Bash(time curl:*)"
     ],
     "deny": [],
     "ask": []

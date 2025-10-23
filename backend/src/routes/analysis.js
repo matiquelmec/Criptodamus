@@ -16,6 +16,18 @@ try {
 const router = express.Router();
 const analysisService = new TechnicalAnalysisService();
 
+// Middleware para inyectar marketDataService (datos reales) al servicio de análisis
+const injectMarketDataService = (req, res, next) => {
+  try {
+    if (req.app && req.app.locals && req.app.locals.marketDataService) {
+      analysisService.marketDataService = req.app.locals.marketDataService;
+    }
+  } catch (e) {
+    // noop
+  }
+  next();
+};
+
 // Middleware para validar símbolo
 const validateSymbol = (req, res, next) => {
   const { symbol } = req.params;
@@ -42,10 +54,10 @@ const validateSymbol = (req, res, next) => {
  * GET /api/analysis/:symbol
  * Obtiene análisis técnico completo para un símbolo
  */
-router.get('/:symbol', validateSymbol, async (req, res) => {
+router.get('/:symbol', validateSymbol, injectMarketDataService, async (req, res) => {
   try {
     const { symbol } = req.params;
-    const { timeframe = '1h', periods = 100 } = req.query;
+    const { timeframe = '1h', periods = 150 } = req.query;
 
     // Validar parámetros
     const validTimeframes = ['1m', '5m', '15m', '1h', '4h', '1d'];
@@ -94,12 +106,14 @@ router.get('/:symbol', validateSymbol, async (req, res) => {
  * GET /api/analysis/:symbol/rsi
  * Obtiene análisis RSI específico con divergencias
  */
-router.get('/:symbol/rsi', validateSymbol, async (req, res) => {
+router.get('/:symbol/rsi', validateSymbol, injectMarketDataService, async (req, res) => {
   try {
     const { symbol } = req.params;
-    const { timeframe = '1h', period = 14 } = req.query;
+    const { timeframe = '1h', period = 14, periods = 150 } = req.query;
 
-    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, 100);
+    const periodsNum = parseInt(periods);
+    const effectivePeriods = (!isNaN(periodsNum) && periodsNum >= 50 && periodsNum <= 1000) ? periodsNum : 150;
+    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, effectivePeriods);
 
     if (!analysis.rsi || analysis.rsi.length === 0) {
       return res.status(404).json({
@@ -144,12 +158,14 @@ router.get('/:symbol/rsi', validateSymbol, async (req, res) => {
  * GET /api/analysis/:symbol/levels
  * Obtiene niveles de soporte y resistencia
  */
-router.get('/:symbol/levels', validateSymbol, async (req, res) => {
+router.get('/:symbol/levels', validateSymbol, injectMarketDataService, async (req, res) => {
   try {
     const { symbol } = req.params;
-    const { timeframe = '1h' } = req.query;
+    const { timeframe = '1h', periods = 150 } = req.query;
 
-    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, 100);
+    const periodsNum = parseInt(periods);
+    const effectivePeriods = (!isNaN(periodsNum) && periodsNum >= 50 && periodsNum <= 1000) ? periodsNum : 150;
+    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, effectivePeriods);
 
     if (!analysis.supportResistance) {
       return res.status(404).json({
@@ -202,12 +218,14 @@ router.get('/:symbol/levels', validateSymbol, async (req, res) => {
  * GET /api/analysis/:symbol/fibonacci
  * Obtiene niveles de Fibonacci
  */
-router.get('/:symbol/fibonacci', validateSymbol, async (req, res) => {
+router.get('/:symbol/fibonacci', validateSymbol, injectMarketDataService, async (req, res) => {
   try {
     const { symbol } = req.params;
-    const { timeframe = '1h' } = req.query;
+    const { timeframe = '1h', periods = 150 } = req.query;
 
-    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, 100);
+    const periodsNum = parseInt(periods);
+    const effectivePeriods = (!isNaN(periodsNum) && periodsNum >= 50 && periodsNum <= 1000) ? periodsNum : 150;
+    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, effectivePeriods);
 
     if (!analysis.fibonacci) {
       return res.status(404).json({
@@ -250,12 +268,14 @@ router.get('/:symbol/fibonacci', validateSymbol, async (req, res) => {
  * GET /api/analysis/:symbol/bbwp
  * Obtiene análisis BBWP (Bollinger Band Width Percentile)
  */
-router.get('/:symbol/bbwp', validateSymbol, async (req, res) => {
+router.get('/:symbol/bbwp', validateSymbol, injectMarketDataService, async (req, res) => {
   try {
     const { symbol } = req.params;
-    const { timeframe = '1h' } = req.query;
+    const { timeframe = '1h', periods = 300 } = req.query;
 
-    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, 300); // Más datos para BBWP
+    const periodsNum = parseInt(periods);
+    const effectivePeriods = (!isNaN(periodsNum) && periodsNum >= 252 && periodsNum <= 2000) ? periodsNum : 300; // BBWP requiere >=252
+    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, effectivePeriods); // Más datos para BBWP
 
     if (!analysis.bbwp || analysis.bbwp.length === 0) {
       return res.status(404).json({
@@ -310,7 +330,7 @@ router.get('/:symbol/bbwp', validateSymbol, async (req, res) => {
  * GET /api/analysis/:symbol/patterns
  * Obtiene patrones chartistas detectados
  */
-router.get('/:symbol/patterns', validateSymbol, async (req, res) => {
+router.get('/:symbol/patterns', validateSymbol, injectMarketDataService, async (req, res) => {
   try {
     const { symbol } = req.params;
     const { timeframe = '1h' } = req.query;
@@ -357,12 +377,14 @@ router.get('/:symbol/patterns', validateSymbol, async (req, res) => {
  * GET /api/analysis/:symbol/confluence
  * Obtiene análisis de confluencia y puntuación total
  */
-router.get('/:symbol/confluence', validateSymbol, async (req, res) => {
+router.get('/:symbol/confluence', validateSymbol, injectMarketDataService, async (req, res) => {
   try {
     const { symbol } = req.params;
-    const { timeframe = '1h' } = req.query;
+    const { timeframe = '1h', periods = 150 } = req.query;
 
-    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, 150);
+    const periodsNum = parseInt(periods);
+    const effectivePeriods = (!isNaN(periodsNum) && periodsNum >= 50 && periodsNum <= 1000) ? periodsNum : 150;
+    const analysis = await analysisService.analyzeSymbol(symbol, timeframe, effectivePeriods);
 
     const summary = analysis.summary;
 

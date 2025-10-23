@@ -11,7 +11,8 @@ import {
   BookOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { NavLink } from 'react-router-dom'
 
 interface SidebarProps {
   className?: string
@@ -89,15 +90,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex-1 overflow-auto py-4">
         <nav className="space-y-1 px-3">
           {menuItems.map((item) => (
-            <Button
+            <NavLink
               key={item.href}
-              variant="ghost"
-              className={cn(
+              to={item.href}
+              className={({ isActive }) => cn(
+                buttonVariants({ variant: 'ghost', size: collapsed ? 'icon' : 'sm' }),
                 "w-full justify-start text-left font-normal",
                 collapsed ? "px-2" : "px-3",
-                "hover:bg-accent hover:text-accent-foreground"
+                "hover:bg-accent hover:text-accent-foreground",
+                isActive && "bg-accent text-accent-foreground"
               )}
-              size={collapsed ? "icon" : "sm"}
             >
               <item.icon className={cn(
                 "h-4 w-4",
@@ -118,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   )}
                 </>
               )}
-            </Button>
+            </NavLink>
           ))}
         </nav>
       </div>

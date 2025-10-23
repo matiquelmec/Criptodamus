@@ -5,21 +5,16 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import {
-  Shield,
   Calculator,
   AlertTriangle,
   CheckCircle,
   TrendingUp,
   TrendingDown,
-  Target,
   DollarSign,
-  Percent,
-  Settings,
-  RefreshCw,
   Info
 } from 'lucide-react'
 import { useRiskCalculator } from '@/hooks/useRiskManagement'
-import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 
 interface RiskCalculatorForm {
   symbol: string
@@ -47,7 +42,7 @@ export const RiskManagementWidget: React.FC = () => {
   const [results, setResults] = useState<any>(null)
   const [isCalculating, setIsCalculating] = useState(false)
 
-  const { calculateAll, isLoading, error } = useRiskCalculator()
+  const { calculateAll, error } = useRiskCalculator()
 
   const handleCalculate = async () => {
     if (!form.entryPrice || !form.stopLoss) {

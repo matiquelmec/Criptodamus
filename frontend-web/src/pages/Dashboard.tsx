@@ -1,15 +1,15 @@
 import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { TrendingUp, Activity, Target, Shield, AlertTriangle } from 'lucide-react'
-import { useTopCryptos, useFearGreedIndex } from '@/hooks/useMarketData'
+import { TrendingUp, Activity, Target, Shield } from 'lucide-react'
+import { useFearGreedIndex } from '@/hooks/useMarketData'
 import { RealTimePricesPanel } from '@/components/RealTimePricesPanel'
 import { TradingSignalsPanel } from '@/components/TradingSignalsPanel'
 import { RiskManagementWidget } from '@/components/RiskManagementWidget'
-import { formatCurrency, formatPercentage, getPriceChangeColor } from '@/lib/utils'
+import { useNavigate } from 'react-router-dom'
 
 export const Dashboard: React.FC = () => {
-  const { data: topCryptos, isLoading: cryptosLoading, error: cryptosError } = useTopCryptos(10)
+  const navigate = useNavigate()
   const { data: fearGreed, isLoading: fearGreedLoading } = useFearGreedIndex()
 
   return (
@@ -23,11 +23,11 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => navigate('/analysis')}>
             <Activity className="mr-2 h-4 w-4" />
             Start Analysis
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => navigate('/signals')}>
             <Target className="mr-2 h-4 w-4" />
             Generate Signals
           </Button>
@@ -119,19 +119,19 @@ export const Dashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-16 flex-col">
+            <Button variant="outline" className="h-16 flex-col" onClick={() => navigate('/signals')}>
               <Activity className="h-6 w-6 mb-2" />
               <span className="text-xs">Market Scan</span>
             </Button>
-            <Button variant="outline" className="h-16 flex-col">
+            <Button variant="outline" className="h-16 flex-col" onClick={() => navigate('/signals')}>
               <Target className="h-6 w-6 mb-2" />
               <span className="text-xs">Generate Signal</span>
             </Button>
-            <Button variant="outline" className="h-16 flex-col">
+            <Button variant="outline" className="h-16 flex-col" onClick={() => navigate('/risk')}>
               <Shield className="h-6 w-6 mb-2" />
               <span className="text-xs">Risk Analysis</span>
             </Button>
-            <Button variant="outline" className="h-16 flex-col">
+            <Button variant="outline" className="h-16 flex-col" onClick={() => navigate('/portfolio')}>
               <TrendingUp className="h-6 w-6 mb-2" />
               <span className="text-xs">Portfolio</span>
             </Button>

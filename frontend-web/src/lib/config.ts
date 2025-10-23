@@ -1,6 +1,6 @@
 export const config = {
   apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
-  wsUrl: import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
+  wsUrl: import.meta.env.VITE_WS_URL || 'http://localhost:3001',
   env: import.meta.env.MODE,
   isDev: import.meta.env.DEV,
   isProd: import.meta.env.PROD,
@@ -8,10 +8,10 @@ export const config = {
 
 export const API_ENDPOINTS = {
   // Market Data
-  MARKET_HEALTH: '/api/market/health',
+  MARKET_HEALTH: '/api/health',
   MARKET_PRICES: '/api/market/prices',
-  MARKET_TOP_CRYPTOS: '/api/market/top-cryptos',
-  MARKET_FEAR_GREED: '/api/market/fear-greed',
+  MARKET_TOP_CRYPTOS: '/api/market/data',
+  MARKET_FEAR_GREED: '/api/market/macro',
   MARKET_FUNDING_RATES: '/api/market/funding-rates',
   MARKET_OPPORTUNITIES: '/api/market/opportunities',
 
@@ -20,7 +20,7 @@ export const API_ENDPOINTS = {
   RISK_VALIDATE_STOP_LOSS: '/api/risk/validate-stop-loss',
   RISK_CALCULATE_TAKE_PROFIT: '/api/risk/calculate-take-profit',
   RISK_CHECK_BREAKEVEN: '/api/risk/check-breakeven',
-  RISK_DETECT_STREAK: '/api/risk/detect-losing-streak',
+  RISK_DETECT_STREAK: '/api/risk/check-trading-streak',
 
   // Technical Analysis
   ANALYSIS_RSI: '/api/analysis/rsi',
@@ -34,7 +34,8 @@ export const API_ENDPOINTS = {
   // Signal Generation
   SIGNALS: '/api/signals',
   SIGNALS_GENERATE: '/api/signals/generate',
-  SIGNALS_SCAN: '/api/signals/scan-multiple',
+  SIGNALS_SCAN: '/api/signals/scan',
+  SIGNALS_TOP_MOVERS: '/api/signals/scan/top-movers',
   SIGNALS_CONFLUENCE: '/api/signals/confluence',
   SIGNALS_CONFIG: '/api/signals/config',
 

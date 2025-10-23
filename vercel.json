@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "functions": {
+    "backend/src/app.js": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "builds": [
+    {
+      "src": "frontend-web/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/src/app.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend-web/dist/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}

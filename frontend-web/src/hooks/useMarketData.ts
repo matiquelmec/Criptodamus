@@ -12,7 +12,7 @@ export const useMarketPrices = (symbols?: string[]) => {
   })
 }
 
-export const useTopCryptos = (limit: number = 20) => {
+export const useTopCryptos = (limit: number = 50) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.MARKET_TOP_CRYPTOS, limit],
     queryFn: () => marketService.getTopCryptos(limit),

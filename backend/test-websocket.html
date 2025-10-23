@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WebSocket Connection</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .error { background-color: #fff3cd; color: #856404; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        #log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Test de Conexión WebSocket</h1>
+        
+        <div id="status" class="status disconnected">
+            ❌ Desconectado
+        </div>
+
+        <div>
+            <button id="connectBtn" onclick="connect()">Conectar</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Desconectar</button>
+            <button id="testBtn" onclick="sendTestMessage()" disabled>Enviar Mensaje de Prueba</button>
+            <button onclick="clearLog()">Limpiar Log</button>
+        </div>
+
+        <h3>📋 Log de Eventos:</h3>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let socket = null;
+        const statusEl = document.getElementById('status');
+        const logEl = document.getElementById('log');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const testBtn = document.getElementById('testBtn');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
+            logEl.appendChild(logEntry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStatus(connected, message) {
+            if (connected) {
+                statusEl.className = 'status connected';
+                statusEl.textContent = `✅ ${message}`;
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                testBtn.disabled = false;
+            } else {
+                statusEl.className = 'status disconnected';
+                statusEl.textContent = `❌ ${message}`;
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                testBtn.disabled = true;
+            }
+        }
+
+        function connect() {
+            log('🔄 Intentando conectar a WebSocket...');
+            
+            socket = io('http://localhost:3001', {
+                transports: ['polling', 'websocket'],
+                autoConnect: true,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 10000,
+                forceNew: true,
+            });
+
+            socket.on('connect', () => {
+                log(`✅ Conectado exitosamente. Socket ID: ${socket.id}`, 'success');
+                updateStatus(true, `Conectado (${socket.id})`);
+            });
+
+            socket.on('disconnect', (reason) => {
+                log(`❌ Desconectado. Razón: ${reason}`, 'error');
+                updateStatus(false, `Desconectado: ${reason}`);
+            });
+
+            socket.on('connect_error', (error) => {
+                log(`🚨 Error de conexión: ${error.message}`, 'error');
+                updateStatus(false, `Error: ${error.message}`);
+            });
+
+            socket.on('connected', (data) => {
+                log(`📨 Mensaje de bienvenida recibido: ${JSON.stringify(data)}`, 'success');
+            });
+
+            socket.on('test-response', (data) => {
+                log(`📨 Respuesta de prueba recibida: ${JSON.stringify(data)}`, 'success');
+            });
+
+            socket.on('reconnect', (attemptNumber) => {
+                log(`🔄 Reconectado después de ${attemptNumber} intentos`, 'success');
+            });
+
+            socket.on('reconnect_error', (error) => {
+                log(`🚨 Error de reconexión: ${error.message}`, 'error');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                log('🔄 Desconectando...');
+                socket.disconnect();
+                socket = null;
+            }
+        }
+
+        function sendTestMessage() {
+            if (socket && socket.connected) {
+                const message = {
+                    text: 'Hola desde el frontend!',
+                    timestamp: new Date().toISOString(),
+                    random: Math.random()
+                };
+                log(`📤 Enviando mensaje de prueba: ${JSON.stringify(message)}`);
+                socket.emit('test-message', message);
+            } else {
+                log('❌ No hay conexión activa', 'error');
+            }
+        }
+
+        function clearLog() {
+            logEl.innerHTML = '';
+        }
+
+        // Auto-conectar al cargar la página
+        window.onload = () => {
+            log('🚀 Página cargada. Iniciando prueba de conexión...');
+            connect();
+        };
+    </script>
+</body>
+</html>
+

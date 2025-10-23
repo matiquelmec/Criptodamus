@@ -152,4 +152,125 @@ const riskLogger = {
   }
 };
 
-module.exports = { logger, riskLogger };
+// Logger específico para señales de trading
+const signalLogger = {
+  /**
+   * Log generación de señales
+   */
+  logSignalGeneration(data) {
+    logger.info('SIGNAL_GENERATION', {
+      type: 'TRADING_SIGNALS',
+      action: 'GENERATE_SIGNAL',
+      symbol: data.symbol,
+      direction: data.direction,
+      confluenceScore: data.confluenceScore,
+      success: data.success,
+      riskReward: data.riskReward,
+      timestamp: new Date().toISOString()
+    });
+  },
+
+  /**
+   * Log errores de señales
+   */
+  logSignalError(symbol, error, context = {}) {
+    logger.error('SIGNAL_ERROR', {
+      type: 'TRADING_SIGNALS',
+      action: 'SIGNAL_ERROR',
+      symbol,
+      error: {
+        message: error.message,
+        stack: error.stack
+      },
+      context,
+      timestamp: new Date().toISOString()
+    });
+  },
+
+  /**
+   * Log escaneo múltiple
+   */
+  logBulkScan(data) {
+    logger.info('BULK_SCAN', {
+      type: 'TRADING_SIGNALS',
+      action: 'BULK_SCAN',
+      symbolsScanned: data.symbolsScanned,
+      validSignals: data.validSignals,
+      avgConfluence: data.avgConfluence,
+      duration: data.duration,
+      timestamp: new Date().toISOString()
+    });
+  },
+
+  /**
+   * Log llamadas a API
+   */
+  logApiCall(endpoint, method, params, response, duration) {
+    logger.info('API_CALL', {
+      type: 'API',
+      action: 'HTTP_REQUEST',
+      endpoint,
+      method,
+      statusCode: response?.status,
+      success: response?.success,
+      duration: `${duration}ms`,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
+// Función para obtener estadísticas de logs
+const getLogStats = () => {
+  const stats = {
+    logsDirectory: logsDir,
+    files: []
+  };
+
+  try {
+    const files = fs.readdirSync(logsDir);
+    files.forEach(file => {
+      const filePath = path.join(logsDir, file);
+      const stat = fs.statSync(filePath);
+      stats.files.push({
+        name: file,
+        size: stat.size,
+        modified: stat.mtime,
+        sizeFormatted: `${(stat.size / 1024 / 1024).toFixed(2)} MB`
+      });
+    });
+  } catch (error) {
+    logger.warn('Could not read logs directory stats', { error: error.message });
+  }
+
+  return stats;
+};
+
+// Middleware para Express logging
+const expressLogger = (req, res, next) => {
+  const start = Date.now();
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+
+    logger.info('HTTP_REQUEST', {
+      type: 'HTTP',
+      method: req.method,
+      url: req.originalUrl,
+      statusCode: res.statusCode,
+      duration: `${duration}ms`,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  next();
+};
+
+module.exports = {
+  logger,
+  riskLogger,
+  signalLogger,
+  getLogStats,
+  expressLogger
+};

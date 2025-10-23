@@ -15,7 +15,17 @@ try {
 }
 
 const router = express.Router();
-const signalGenerator = new SignalGeneratorService();
+const signalGenerator = new SignalGeneratorService({
+  marketDataService: null // Se inicializará dinámicamente
+});
+
+// Middleware para inyectar marketDataService
+const injectMarketDataService = (req, res, next) => {
+  if (req.app.locals.marketDataService) {
+    signalGenerator.technicalAnalysis.marketDataService = req.app.locals.marketDataService;
+  }
+  next();
+};
 
 // Middleware para validar símbolo
 const validateSymbol = (req, res, next) => {
@@ -60,7 +70,7 @@ const validateBalance = (req, res, next) => {
  * POST /api/signals/generate/:symbol
  * Genera una señal de trading para un símbolo específico
  */
-router.post('/generate/:symbol', validateSymbol, validateBalance, async (req, res) => {
+router.post('/generate/:symbol', injectMarketDataService, validateSymbol, validateBalance, async (req, res) => {
   try {
     const { symbol } = req.params;
     const {
@@ -112,7 +122,7 @@ router.post('/generate/:symbol', validateSymbol, validateBalance, async (req, re
  * GET /api/signals/quick/:symbol
  * Genera una señal rápida con configuración por defecto
  */
-router.get('/quick/:symbol', validateSymbol, async (req, res) => {
+router.get('/quick/:symbol', injectMarketDataService, validateSymbol, async (req, res) => {
   try {
     const { symbol } = req.params;
     const { balance = 10000 } = req.query;
@@ -163,13 +173,13 @@ router.get('/quick/:symbol', validateSymbol, async (req, res) => {
  * POST /api/signals/scan
  * Escanea múltiples símbolos en busca de señales válidas
  */
-router.post('/scan', validateBalance, async (req, res) => {
+router.post('/scan', injectMarketDataService, validateBalance, async (req, res) => {
   try {
     const {
       symbols = ['BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'SOLUSDT', 'DOTUSDT'],
       timeframe = '4h',
       accountBalance = 10000,
-      minConfluenceScore = 75
+      minConfluenceScore = 30  // CRÍTICO: Reducido de 75 a 30 para detectar movimientos
     } = req.body;
 
     // Validar símbolos
@@ -238,20 +248,35 @@ router.post('/scan', validateBalance, async (req, res) => {
  * GET /api/signals/scan/top-movers
  * Escanea las principales criptomonedas en busca de señales
  */
-router.get('/scan/top-movers', async (req, res) => {
+router.get('/scan/top-movers', injectMarketDataService, async (req, res) => {
   try {
     const {
       limit = 20,
-      timeframe = '4h',
+      timeframe = '5m', // CAMBIO CRÍTICO: Default 5min para SCALPING
       balance = 10000
     } = req.query;
 
-    // Top cryptos por market cap (en un entorno real, obtener de API)
+    // Top 50 cryptos por market cap (en un entorno real, obtener de API)
     const topSymbols = [
+      // Top 10
       'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT',
-      'SOLUSDT', 'DOTUSDT', 'LTCUSDT', 'LINKUSDT', 'MATICUSDT',
+      'SOLUSDT', 'DOTUSDT', 'LTCUSDT', 'LINKUSDT', 'POLUSDT',
+
+      // Top 11-20
       'AVAXUSDT', 'UNIUSDT', 'ATOMUSDT', 'NEARUSDT', 'AAVEUSDT',
-      'FILUSDT', 'FTMUSDT', 'SANDUSDT', 'MANAUSDT', 'GALAUSDT'
+      'FILUSDT', 'FTMUSDT', 'SANDUSDT', 'MANAUSDT', 'GALAUSDT',
+
+      // Top 21-30
+      'DOGEUSDT', 'SHIBUSDT', 'TRXUSDT', 'VETUSDT', 'XLMUSDT',
+      'ALGOUSDT', 'ICPUSDT', 'EOSUSDT', 'THETAUSDT', 'FLOWUSDT',
+
+      // Top 31-40
+      'HBARUSDT', 'EGLDUSDT', 'CHZUSDT', 'ENJUSDT', 'CRVUSDT',
+      'MKRUSDT', 'COMPUSDT', 'YFIUSDT', 'SNXUSDT', 'SUIUSDT',
+
+      // Top 41-50
+      'APTUSDT', 'ARBUSDT', 'OPUSDT', 'INJUSDT', 'LDOUSDT',
+      'STXUSDT', 'TONUSDT', 'TIAUSDT', 'FETUSDT', 'RNDRUSDT'
     ].slice(0, parseInt(limit));
 
     const scanResult = await signalGenerator.scanMultipleSymbols(topSymbols, {
@@ -289,7 +314,7 @@ router.get('/scan/top-movers', async (req, res) => {
  * GET /api/signals/confluence/:symbol
  * Obtiene análisis detallado de confluencia para un símbolo
  */
-router.get('/confluence/:symbol', validateSymbol, async (req, res) => {
+router.get('/confluence/:symbol', injectMarketDataService, validateSymbol, async (req, res) => {
   try {
     const { symbol } = req.params;
     const { timeframe = '4h' } = req.query;

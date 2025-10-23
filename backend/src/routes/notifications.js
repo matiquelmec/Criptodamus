@@ -1,5 +1,5 @@
 const express = require('express');
-const TelegramService = require('../services/telegramService');
+const MultiTelegramService = require('../services/multiTelegramService');
 const SignalGeneratorService = require('../services/signalGeneratorService');
 
 // Logger mock para testing si no está disponible
@@ -16,7 +16,7 @@ try {
 }
 
 const router = express.Router();
-const telegramService = new TelegramService();
+const multiTelegram = new MultiTelegramService();
 const signalGenerator = new SignalGeneratorService();
 
 // ================== CONFIGURACIÓN Y ESTADO ==================
@@ -27,14 +27,15 @@ const signalGenerator = new SignalGeneratorService();
  */
 router.get('/health', async (req, res) => {
   try {
-    const health = telegramService.getHealthStatus();
-    const connectionTest = await telegramService.testConnection();
+    const stats = multiTelegram.getAllStats();
+    const connections = await multiTelegram.testAllConnections();
 
     res.json({
       success: true,
       data: {
-        ...health,
-        connectionTest
+        multiBot: stats.multiBot,
+        bots: stats.bots,
+        connections
       }
     });
 
@@ -55,7 +56,7 @@ router.post('/test', async (req, res) => {
   try {
     const { message = 'Mensaje de prueba desde CryptoTrading AI Advisor' } = req.body;
 
-    const result = await telegramService.sendMessage(`🧪 *TEST MESSAGE*\n\n${message}\n\n🕐 ${new Date().toLocaleString()}`);
+    const result = await multiTelegram.broadcast(`🧪 TEST MESSAGE\n\n${message}\n\n🕐 ${new Date().toLocaleString()}`);
 
     res.json({
       success: true,
@@ -100,35 +101,11 @@ router.get('/stats', (req, res) => {
  */
 router.post('/config', async (req, res) => {
   try {
-    const {
-      botToken,
-      chatId,
-      enableNotifications,
-      parseMode,
-      retryAttempts
-    } = req.body;
-
-    const updates = {};
-
-    if (botToken !== undefined) updates.botToken = botToken;
-    if (chatId !== undefined) updates.chatId = chatId;
-    if (enableNotifications !== undefined) updates.enableNotifications = enableNotifications;
-    if (parseMode !== undefined) updates.parseMode = parseMode;
-    if (retryAttempts !== undefined) updates.retryAttempts = retryAttempts;
-
-    telegramService.updateConfig(updates);
-
-    // Test connection if enabled
-    let connectionTest = null;
-    if (updates.enableNotifications !== false) {
-      connectionTest = await telegramService.testConnection();
-    }
-
+    // La configuración de múltiples bots se realiza vía /api/multi-telegram/*
+    // Este endpoint queda como referencia para compatibilidad.
     res.json({
       success: true,
-      message: 'Configuración actualizada',
-      updates,
-      connectionTest,
+      message: 'Usa los endpoints de /api/multi-telegram para configurar múltiples bots (config, routing, test-connections).',
       timestamp: new Date()
     });
 
@@ -173,8 +150,8 @@ router.post('/signal', async (req, res) => {
     let notificationResult = null;
 
     if (sendNotification) {
-      // Enviar notificación
-      notificationResult = await telegramService.sendSignalAlert(signal);
+      // Enviar notificación mediante enrutamiento multi-bot
+      notificationResult = await multiTelegram.sendSignalAlert(signal);
     }
 
     res.json({
@@ -225,7 +202,7 @@ router.post('/market-alert', async (req, res) => {
       });
     }
 
-    const result = await telegramService.sendMarketAlert(alertType, data);
+    const result = await multiTelegram.sendMarketAlert(alertType, data);
 
     res.json({
       success: true,
@@ -272,7 +249,7 @@ router.post('/risk-alert', async (req, res) => {
       });
     }
 
-    const result = await telegramService.sendRiskAlert(riskType, data);
+    const result = await multiTelegram.sendRiskAlert(riskType, data);
 
     res.json({
       success: true,
@@ -314,7 +291,7 @@ router.post('/system-alert', async (req, res) => {
       });
     }
 
-    const result = await telegramService.sendSystemAlert(alertType, message);
+    const result = await multiTelegram.sendSystemAlert(alertType, message);
 
     res.json({
       success: true,
@@ -359,7 +336,7 @@ router.post('/daily-report', async (req, res) => {
       analysisCount
     };
 
-    const result = await telegramService.sendDailyReport(reportData);
+    const result = await multiTelegram.sendDailyReport(reportData);
 
     res.json({
       success: true,
@@ -412,7 +389,7 @@ router.post('/weekly-report', async (req, res) => {
       weekEnd
     };
 
-    const result = await telegramService.sendWeeklyReport(reportData);
+    const result = await multiTelegram.sendWeeklyReport(reportData);
 
     res.json({
       success: true,
@@ -441,7 +418,7 @@ router.post('/scan-and-notify', async (req, res) => {
       symbols = ['BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'SOLUSDT'],
       timeframe = '4h',
       accountBalance = 10000,
-      minConfluenceScore = 75,
+      minConfluenceScore = 30, // CRÍTICO: Reducido para detectar movimientos
       onlyValidSignals = true
     } = req.body;
 
@@ -639,7 +616,7 @@ router.get('/examples', (req, res) => {
         body: {
           symbols: ['BTCUSDT', 'ETHUSDT', 'ADAUSDT'],
           timeframe: '4h',
-          minConfluenceScore: 75,
+          minConfluenceScore: 30, // CRÍTICO: Reducido para detectar movimientos
           onlyValidSignals: true
         }
       }

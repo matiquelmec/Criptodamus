@@ -1,9 +1,10 @@
 import React from 'react'
 import { Moon, Sun, Activity, TrendingUp, Settings, Bell } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { SystemStatus } from '@/components/SystemStatus'
 import { useTheme } from '@/contexts/ThemeContext'
 import { cn } from '@/lib/utils'
+import { NavLink } from 'react-router-dom'
 
 interface HeaderProps {
   className?: string
@@ -33,20 +34,32 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center space-x-1">
-          <Button variant="ghost" size="sm" className="text-sm">
+          <NavLink
+            to="/"
+            className={({ isActive }) => cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-sm', isActive && 'bg-accent text-accent-foreground')}
+          >
             <Activity className="mr-2 h-4 w-4" />
             Dashboard
-          </Button>
-          <Button variant="ghost" size="sm" className="text-sm">
+          </NavLink>
+          <NavLink
+            to="/signals"
+            className={({ isActive }) => cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-sm', isActive && 'bg-accent text-accent-foreground')}
+          >
             <TrendingUp className="mr-2 h-4 w-4" />
             Signals
-          </Button>
-          <Button variant="ghost" size="sm" className="text-sm">
+          </NavLink>
+          <NavLink
+            to="/prices"
+            className={({ isActive }) => cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-sm', isActive && 'bg-accent text-accent-foreground')}
+          >
             Markets
-          </Button>
-          <Button variant="ghost" size="sm" className="text-sm">
+          </NavLink>
+          <NavLink
+            to="/portfolio"
+            className={({ isActive }) => cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-sm', isActive && 'bg-accent text-accent-foreground')}
+          >
             Portfolio
-          </Button>
+          </NavLink>
         </nav>
 
         {/* Right side controls */}

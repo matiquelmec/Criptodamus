@@ -62,8 +62,9 @@ export const apiDelete = <T = any>(url: string): Promise<T> => {
 // Health check function
 export const checkApiHealth = async (): Promise<boolean> => {
   try {
-    const response = await apiGet('/api/health')
-    return response.status === 'ok'
+    const response = await apiGet<any>('/api/health')
+    // Backend returns: { success: true, status: 'healthy', ... }
+    return Boolean(response?.success) || response?.status === 'healthy'
   } catch (error) {
     console.error('API health check failed:', error)
     return false

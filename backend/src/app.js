@@ -4,6 +4,8 @@
  */
 
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
@@ -18,14 +20,61 @@ const marketRoutes = require('./routes/market');
 const analysisRoutes = require('./routes/analysis');
 const signalRoutes = require('./routes/signals');
 const notificationRoutes = require('./routes/notifications');
+const { router: multiTelegramRoutes } = require('./routes/multiTelegram');
+const liquidationRoutes = require('./routes/liquidations');
+
+// Loading averaging routes with error handling
+let averagingRoutes;
+try {
+  averagingRoutes = require('./routes/averaging');
+  console.log('✅ Averaging routes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading averaging routes:', error.message);
+  averagingRoutes = null;
+}
 
 // Inicializar aplicación
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "http://localhost:3000",  // Puerto por defecto de Vite
+      "http://localhost:3001",  // Puerto del backend
+      "http://localhost:3002",  // Puerto alternativo
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+      "http://127.0.0.1:3002",
+      "http://localhost:5173",  // Puerto alternativo de Vite
+      "http://127.0.0.1:5173"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  transports: ['polling', 'websocket'],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000,
+});
 const PORT = process.env.PORT || 3001;
 
 // Middlewares de seguridad
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:3001", 
+    "http://localhost:3002",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:5173"
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -87,6 +136,14 @@ app.use('/api/signals', signalRoutes);
 
 // Rutas de notificaciones
 app.use('/api/notifications', notificationRoutes);
+
+// Rutas de múltiples bots de Telegram
+app.use('/api/multi-telegram', multiTelegramRoutes);
+
+// Rutas de análisis de liquidaciones y mapas de calor
+app.use('/api/liquidations', liquidationRoutes);
+
+// Rutas de sistema de promediación profesional se registran antes del catch-all
 
 // ================================
 // RUTAS DE RISK MANAGEMENT
@@ -309,6 +366,18 @@ app.get('/api/config', (req, res) => {
 });
 
 // ================================
+// RUTAS DE PROMEDIACIÓN PROFESIONAL
+// ================================
+
+// Rutas de sistema de promediación profesional
+if (averagingRoutes) {
+  app.use('/api/averaging', averagingRoutes);
+  console.log('✅ Averaging routes enabled at /api/averaging');
+} else {
+  console.log('⚠️ Averaging routes disabled due to loading error');
+}
+
+// ================================
 // MIDDLEWARE DE MANEJO DE ERRORES
 // ================================
 
@@ -332,6 +401,13 @@ app.use('*', (req, res) => {
       'GET /api/signals/quick/:symbol',
       'POST /api/signals/scan',
       'GET /api/signals/scan/top-movers',
+      'GET /api/averaging/analyze/:symbol',
+      'GET /api/averaging/strategies',
+      'POST /api/averaging/simulate',
+      'GET /api/averaging/position/:symbol',
+      'GET /api/averaging/risk-assessment/:symbol',
+      'GET /api/liquidations/analysis/:symbol',
+      'GET /api/liquidations/heatmap/:symbol',
       'GET /api/health',
       'GET /api/config'
     ]
@@ -361,28 +437,89 @@ async function initializeServices() {
   try {
     logger.info('Initializing services...');
 
-    // Inicializar Binance Service
-    const binanceResult = await binanceService.initialize();
-    if (!binanceResult.success) {
-      throw new Error(`Failed to initialize Binance: ${binanceResult.error}`);
+    // Inicializar Binance Service (modo seguro sin APIs)
+    try {
+      const binanceResult = await binanceService.initialize();
+      if (!binanceResult.success) {
+        logger.warn(`Binance service failed to initialize: ${binanceResult.error}`);
+        logger.warn('Continuing without Binance service...');
+      }
+    } catch (error) {
+      logger.warn('Binance service initialization failed, continuing without it:', error.message);
     }
 
-    // Inicializar Market Data Service
-    const marketResult = await marketDataService.initialize();
-    if (!marketResult.success) {
-      throw new Error(`Failed to initialize MarketData: ${marketResult.error}`);
+    // Inicializar Market Data Service (modo seguro)
+    try {
+      const marketResult = await marketDataService.initialize();
+      if (!marketResult.success) {
+        logger.warn(`MarketData service failed to initialize: ${marketResult.error}`);
+        logger.warn('Continuing without MarketData service...');
+      }
+    } catch (error) {
+      logger.warn('MarketData service initialization failed, continuing without it:', error.message);
     }
 
-    logger.info('All services initialized successfully');
-    return true;
+    logger.info('Services initialization completed (some may have failed)');
+    return true; // Siempre retornar true para que el servidor funcione
 
   } catch (error) {
-    logger.error('Failed to initialize services', { error: error.message });
-    return false;
+    logger.error('Critical error during services initialization', { error: error.message });
+    logger.warn('Server will continue with limited functionality');
+    return true; // Permitir que el servidor funcione aunque fallen los servicios
   }
 }
 
-const server = app.listen(PORT, async () => {
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  logger.info('Client connected to WebSocket', {
+    socketId: socket.id,
+    transport: socket.conn.transport.name,
+    remoteAddress: socket.conn.remoteAddress
+  });
+
+  // Subscribe to price updates
+  socket.on('subscribe-prices', (symbols) => {
+    logger.info('Client subscribed to price updates', { socketId: socket.id, symbols });
+    socket.join('price-updates');
+    // Send confirmation
+    socket.emit('subscribed', { type: 'prices', symbols });
+  });
+
+  // Subscribe to signals
+  socket.on('subscribe-signals', () => {
+    logger.info('Client subscribed to signals', { socketId: socket.id });
+    socket.join('signal-updates');
+    // Send confirmation
+    socket.emit('subscribed', { type: 'signals' });
+  });
+
+  socket.on('disconnect', (reason) => {
+    logger.info('Client disconnected from WebSocket', {
+      socketId: socket.id,
+      reason
+    });
+  });
+
+  socket.on('error', (error) => {
+    logger.error('Socket.IO error', {
+      socketId: socket.id,
+      error: error.message
+    });
+  });
+
+  // Send initial connection confirmation
+  socket.emit('connected', {
+    socketId: socket.id,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Make io available globally for other services
+app.set('io', io);
+
+// Función para intentar iniciar el servidor con manejo de puerto ocupado
+const startServer = (port) => {
+  server.listen(port, async () => {
   console.log(`
 🚀 CryptoTrading AI Advisor - Trading Server
 📍 Puerto: ${PORT}
@@ -446,11 +583,59 @@ const server = app.listen(PORT, async () => {
    GET  /api/notifications/health
    GET  /api/notifications/stats
 
+   💰 AVERAGING SYSTEM:
+   GET  /api/averaging/analyze/:symbol
+   GET  /api/averaging/strategies
+   POST /api/averaging/simulate
+   GET  /api/averaging/position/:symbol
+   GET  /api/averaging/risk-assessment/:symbol
+
    🔧 SYSTEM:
    GET  /api/health
    GET  /api/config
    GET  /api/market/health
     `);
+
+    // Emitir datos de precios en tiempo real a través de Socket.IO
+    try {
+      // Suscribirse a actualizaciones de Binance y emitir por Socket.IO
+      binanceService.subscribe((symbol, priceData) => {
+        try {
+          io.to('price-updates').emit('priceUpdate', {
+            symbol: priceData.symbol,
+            price: priceData.price,
+            changePercent24h: priceData.change24h,
+            volume24h: priceData.volume,
+            timestamp: priceData.timestamp
+          });
+        } catch (emitErr) {
+          logger.warn('Error emitting priceUpdate', { error: emitErr.message });
+        }
+      });
+
+      // Emisión periódica de snapshots en bloque (bulk)
+      setInterval(() => {
+        try {
+          const snapshot = binanceService.getAllPrices();
+          if (snapshot && snapshot.success && snapshot.data) {
+            const payload = Object.values(snapshot.data).map((d) => ({
+              symbol: d.symbol,
+              price: d.price,
+              changePercent24h: d.change24h,
+              volume24h: d.volume,
+              timestamp: d.timestamp
+            }));
+            if (payload.length > 0) {
+              io.to('price-updates').emit('bulkPriceUpdate', payload);
+            }
+          }
+        } catch (bulkErr) {
+          logger.warn('Error emitting bulkPriceUpdate', { error: bulkErr.message });
+        }
+      }, 5000); // cada 5s
+    } catch (wsSetupErr) {
+      logger.warn('Failed to set up real-time Socket.IO emissions', { error: wsSetupErr.message });
+    }
   } else {
     console.log(`
 ⚠️  ADVERTENCIA: Algunos servicios fallaron en la inicialización
@@ -460,12 +645,24 @@ const server = app.listen(PORT, async () => {
   }
 
   logger.info('Server started', {
-    port: PORT,
+    port: port,
     environment: process.env.NODE_ENV,
     riskConfig: riskManager.config,
     servicesInitialized
   });
-});
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`⚠️  Puerto ${port} ocupado, intentando puerto ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      console.error('Error al iniciar servidor:', err);
+      process.exit(1);
+    }
+  });
+};
+
+// Iniciar el servidor
+startServer(PORT);
 
 // Manejo elegante de cierre
 process.on('SIGTERM', async () => {
@@ -474,6 +671,9 @@ process.on('SIGTERM', async () => {
   // Cerrar servicios
   await binanceService.close();
   await marketDataService.close();
+
+  // Cerrar Socket.IO
+  io.close();
 
   server.close(() => {
     logger.info('Server closed');
@@ -487,6 +687,9 @@ process.on('SIGINT', async () => {
   // Cerrar servicios
   await binanceService.close();
   await marketDataService.close();
+
+  // Cerrar Socket.IO
+  io.close();
 
   server.close(() => {
     logger.info('Server closed');

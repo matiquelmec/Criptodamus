@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useWebSocket } from './useWebSocket'
+import { config } from '@/lib/config'
 
 interface PriceUpdate {
   symbol: string
@@ -25,9 +26,7 @@ export const useRealTimePrices = (symbols?: string[]) => {
   })
 
   const { isConnected, connectionError, subscribe, unsubscribe, emit } = useWebSocket(
-    process.env.NODE_ENV === 'development'
-      ? 'ws://localhost:3001'
-      : 'wss://your-production-domain.com',
+    config.wsUrl,
     {
       onConnect: () => {
         console.log('WebSocket connected for real-time prices')
@@ -75,30 +74,42 @@ export const useRealTimePrices = (symbols?: string[]) => {
       })
     }
 
-    // Subscribe to price updates
+    const handleConnected = (data: any) => {
+      console.log('Socket.IO connected confirmation:', data)
+    }
+
+    const handleSubscribed = (data: any) => {
+      console.log('Socket.IO subscribed confirmation:', data)
+    }
+
+    // Subscribe to events
     subscribe('priceUpdate', handlePriceUpdate)
     subscribe('bulkPriceUpdate', handleBulkPriceUpdate)
+    subscribe('connected', handleConnected)
+    subscribe('subscribed', handleSubscribed)
 
     // Request specific symbols if provided
     if (symbols && symbols.length > 0 && isConnected) {
-      emit('subscribeToPrices', { symbols })
+      emit('subscribe-prices', symbols)
     }
 
     return () => {
       unsubscribe('priceUpdate', handlePriceUpdate)
       unsubscribe('bulkPriceUpdate', handleBulkPriceUpdate)
+      unsubscribe('connected', handleConnected)
+      unsubscribe('subscribed', handleSubscribed)
     }
   }, [subscribe, unsubscribe, emit, symbols, isConnected])
 
   const subscribeTo = (newSymbols: string[]) => {
     if (isConnected) {
-      emit('subscribeToPrices', { symbols: newSymbols })
+      emit('subscribe-prices', newSymbols)
     }
   }
 
   const unsubscribeFrom = (symbolsToRemove: string[]) => {
     if (isConnected) {
-      emit('unsubscribeFromPrices', { symbols: symbolsToRemove })
+      emit('unsubscribe-prices', symbolsToRemove)
     }
   }
 

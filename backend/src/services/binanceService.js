@@ -49,12 +49,27 @@ class BinanceService {
     this.subscribers = new Map();
     this.lastPriceUpdate = new Date();
 
-    // Top cryptos a monitorear (basándose en el documento)
+    // Top 50 cryptos a monitorear (expandido para análisis completo)
     this.topSymbols = [
+      // Top 10
       'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'XRP/USDT', 'ADA/USDT',
-      'DOGE/USDT', 'SOL/USDT', 'TRX/USDT', 'TON/USDT', 'MATIC/USDT',
-      'LTC/USDT', 'SHIB/USDT', 'AVAX/USDT', 'UNI/USDT', 'ATOM/USDT',
-      'LINK/USDT', 'XMR/USDT', 'ETC/USDT', 'XLM/USDT', 'BCH/USDT'
+      'SOL/USDT', 'DOT/USDT', 'LTC/USDT', 'LINK/USDT', 'POL/USDT',
+
+      // Top 11-20
+      'AVAX/USDT', 'UNI/USDT', 'ATOM/USDT', 'NEAR/USDT', 'AAVE/USDT',
+      'FIL/USDT', 'FTM/USDT', 'SAND/USDT', 'MANA/USDT', 'GALA/USDT',
+
+      // Top 21-30
+      'DOGE/USDT', 'SHIB/USDT', 'TRX/USDT', 'VET/USDT', 'XLM/USDT',
+      'ALGO/USDT', 'ICP/USDT', 'EOS/USDT', 'THETA/USDT', 'FLOW/USDT',
+
+      // Top 31-40
+      'HBAR/USDT', 'EGLD/USDT', 'CHZ/USDT', 'ENJ/USDT', 'CRV/USDT',
+      'MKR/USDT', 'COMP/USDT', 'YFI/USDT', 'SNX/USDT', 'SUI/USDT',
+
+      // Top 41-50
+      'APT/USDT', 'ARB/USDT', 'OP/USDT', 'INJ/USDT', 'LDO/USDT',
+      'STX/USDT', 'TON/USDT', 'TIA/USDT', 'FET/USDT', 'RNDR/USDT'
     ];
 
     logger.info('BinanceService initialized', {
